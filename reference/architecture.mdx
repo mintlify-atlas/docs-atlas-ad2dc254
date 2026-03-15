@@ -1,0 +1,115 @@
+---
+title: "System architecture"
+description: "Technology stack, module structure, and request flow for the Vitacore Flask application."
+---
+
+Vitacore is a server-rendered web application built with **Flask** and **Supabase**. It uses a blueprint-based modular structure and a repository pattern to separate routing, business logic, and data access.
+
+## Technology stack
+
+| Layer | Technology | Role |
+|---|---|---|
+| Web framework | Flask (Python) | Routing, session management, template rendering |
+| Database + Auth | Supabase (PostgreSQL) | Data storage, user credential validation |
+| Environment config | python-dotenv | Loads `.env` variables into the application config |
+| Templating | Jinja2 (via Flask) | Server-side HTML rendering |
+
+## Module structure
+
+```
+vitacore/
+├── app.py                    # Application factory, blueprint registration
+├── config.py                 # Config class — reads environment variables
+├── routes.py                 # Top-level dashboard blueprint (bp_hc_dashboard)
+├── blueprints/               # Feature modules
+│   ├── auth/                 # Login, logout, decorators
+│   ├── configuracion_roles/  # Role/permission management, admin tools
+│   ├── configuracion_usuarios/ # User accounts
+│   ├── hc_configuracion/     # Healthcare catalog config
+│   ├── hc_pacientes/         # Patients
+│   ├── hc_evoluciones/       # Clinical evolutions
+│   └── hc_signos_vitales/    # Vital signs
+├── repositories/             # Data access layer — one file per Supabase table
+├── services/
+│   └── supabase_service.py   # Supabase client factory
+└── templates/                # Jinja2 HTML templates
+```
+
+Each blueprint directory contains:
+- `routes.py` — route handlers and view logic
+- Any additional route files (e.g. `routes_admin.py`, `routes_rutas.py`)
+
+## Architecture pattern
+
+Vitacore follows two conventions throughout:
+
+**Blueprint-based modular structure** — Each functional area (auth, patients, configuration, etc.) is isolated in its own Flask blueprint. Blueprints are registered in `app.py` with a URL prefix. This keeps route namespaces clean and allows features to be developed and navigated independently.
+
+**Repository pattern** — Route handlers do not query Supabase directly. Instead, each blueprint calls a dedicated repository function that encapsulates all database interaction. This separates HTTP concerns from data access logic and makes the data layer easier to modify or test.
+
+```
+Blueprint route handler
+    └── calls repository function (repositories/)
+            └── calls Supabase client (services/supabase_service.py)
+                    └── queries Supabase (PostgreSQL)
+```
+
+## Request flow
+
+<Steps>
+  <Step title="Browser sends request">
+    The browser sends an HTTP request to a Flask route, such as `GET /hc/pacientes/`.
+  </Step>
+  <Step title="Decorator: authentication check">
+    The `@login_required` decorator inspects `session["user"]`. If no session exists, the request is redirected to `/auth/login`.
+  </Step>
+  <Step title="Decorator: permission check">
+    The `@rol_required` decorator checks the user's role against static role codes and/or the dynamic permission matrix stored in Supabase. A `403` is returned if access is denied.
+  </Step>
+  <Step title="Blueprint route handler executes">
+    The view function runs inside the registered blueprint (e.g. `bp_hc_pacientes`). It calls one or more repository functions to read or write data.
+  </Step>
+  <Step title="Repository queries Supabase">
+    The repository obtains a Supabase client from `supabase_service.py` and issues the query. Admin operations use the service-role client; auth operations use the public client.
+  </Step>
+  <Step title="Response rendered">
+    The route handler passes data to a Jinja2 template and returns the rendered HTML to the browser.
+  </Step>
+</Steps>
+
+## Authentication model
+
+Vitacore uses a two-layer auth model. See [Authentication overview](/auth/overview) for full details.
+
+- **Flask session** — carries the authenticated user's identity (`session["user"]`) and Supabase access token across requests.
+- **Supabase Auth** — validates user credentials via `supabase.auth.sign_in_with_password`. Vitacore users log in with a username; the system looks up the associated email from the `perfiles` table before calling Supabase Auth.
+
+## Supabase clients
+
+Two Supabase clients are available from `services/supabase_service.py`:
+
+| Function | Key used | Purpose |
+|---|---|---|
+| `get_supabase_public()` | `SUPABASE_ANON_KEY` | Authentication operations (sign in, sign out) |
+| `get_supabase_admin()` | `SUPABASE_SERVICE_ROLE_KEY` | All data operations — bypasses row-level security |
+
+<Warning>
+`get_supabase_admin()` uses the service role key, which bypasses Supabase row-level security policies. Only call it from server-side repository functions. Never expose this key to the browser.
+</Warning>
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Database schema" icon="database" href="/reference/database">
+    Table definitions and column reference.
+  </Card>
+  <Card title="Blueprint reference" icon="map" href="/reference/blueprints">
+    All registered blueprints, URL prefixes, and routes.
+  </Card>
+  <Card title="Environment variables" icon="key" href="/reference/environment-variables">
+    Configuration values required to run Vitacore.
+  </Card>
+  <Card title="Authentication overview" icon="lock" href="/auth/overview">
+    Login flow and route protection decorators.
+  </Card>
+</CardGroup>

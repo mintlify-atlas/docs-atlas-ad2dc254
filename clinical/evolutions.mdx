@@ -1,0 +1,80 @@
+---
+title: "Clinical evolutions"
+description: "Document clinical consultations for each patient, including chief complaint, physical exam, diagnostic impressions, and treatment plans."
+---
+
+## Overview
+
+Clinical evolutions are the core documentation tool in Vitacore. Each evolution represents a single consultation visit and captures the structured narrative of the encounter — from the patient's complaint through to the physician's plan.
+
+Evolutions are linked to a specific patient and are accessed from the patient detail view.
+
+## Evolution fields
+
+| Field | Description |
+|-------|-------------|
+| `motivo_consulta` | Chief complaint — why the patient is seeking care |
+| `enfermedad_actual` | Current illness history — detailed description of the presenting condition |
+| `examen_fisico` | Physical examination findings |
+| `impresion_diagnostica` | Diagnostic impression — the working or confirmed diagnosis |
+| `plan` | Treatment plan — medications, procedures, referrals, follow-up instructions |
+| `medico` | Attending physician name |
+| `paciente_id` | Patient this evolution belongs to (set automatically from the URL) |
+
+## Routes
+
+| Method | URL | Description |
+|--------|-----|-------------|
+| `GET` | `/hc/evoluciones/paciente/{paciente_id}` | List evolutions for a patient |
+| `GET` | `/hc/evoluciones/nuevo/{paciente_id}` | New evolution form |
+| `POST` | `/hc/evoluciones/crear/{paciente_id}` | Create evolution |
+
+## Recording a new evolution
+
+<Steps>
+  <Step title="Open the patient detail view">
+    Navigate to `/hc/pacientes/ver/{id}` for the patient you are documenting.
+  </Step>
+  <Step title="Access the evolutions list">
+    From the patient detail, navigate to `/hc/evoluciones/paciente/{paciente_id}` to see all previous consultation notes.
+  </Step>
+  <Step title="Open the new evolution form">
+    Navigate to `/hc/evoluciones/nuevo/{paciente_id}` to open the consultation documentation form.
+  </Step>
+  <Step title="Complete the clinical note">
+    Fill in the structured fields: chief complaint, current illness, physical exam, diagnostic impression, and treatment plan. Enter the attending physician's name.
+  </Step>
+  <Step title="Save the evolution">
+    Submit to `POST /hc/evoluciones/crear/{paciente_id}`. The `paciente_id` is taken from the URL — you do not select the patient in the form.
+  </Step>
+  <Step title="Review the record">
+    On success, you are redirected to the patient's evolution list. The new note appears at the top of the chronological history.
+  </Step>
+</Steps>
+
+## Clinical documentation guidance
+
+<Tip>
+Use the **motivo_consulta** field for the patient's own words describing why they came in. Reserve **enfermedad_actual** for the clinical narrative — onset, duration, associated symptoms, and relevant history.
+</Tip>
+
+<Tip>
+The **impresion_diagnostica** field accepts free text. You may enter ICD codes alongside plain-language descriptions (e.g., "J06.9 — Acute upper respiratory infection").
+</Tip>
+
+<Note>
+Evolutions are created but not edited. Each consultation generates a new, immutable record. If a correction is needed, create a new evolution that references and supersedes the previous one.
+</Note>
+
+## Viewing evolution history
+
+The evolution list at `/hc/evoluciones/paciente/{paciente_id}` displays all recorded consultations for that patient in chronological order. Each entry shows the consultation data including the physician and the full clinical note.
+
+<CardGroup cols={2}>
+  <Card title="Patient management" icon="user-injured" href="/clinical/patients">
+    Manage patient demographics and status
+  </Card>
+  <Card title="Vital signs" icon="heart-pulse" href="/clinical/vital-signs">
+    Record and view vital signs per consultation
+  </Card>
+</CardGroup>

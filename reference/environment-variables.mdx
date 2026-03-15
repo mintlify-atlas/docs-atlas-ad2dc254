@@ -1,0 +1,114 @@
+---
+title: "Environment variables"
+description: "All environment variables read by Vitacore at startup, with defaults and descriptions."
+---
+
+Vitacore reads its configuration from environment variables at startup using `python-dotenv`. Variables are loaded in `config.py` and exposed to the application through the `Config` class.
+
+Create a `.env` file in the project root before running the application. The file is loaded by `load_dotenv()` in `config.py`.
+
+## Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `FLASK_SECRET_KEY` | Recommended | `dev-secret` | Secret key used to sign Flask sessions. Must be set to a strong random value in production. |
+| `SUPABASE_URL` | Yes | _(empty)_ | The URL of your Supabase project (e.g. `https://xxxx.supabase.co`). |
+| `SUPABASE_ANON_KEY` | Yes | _(empty)_ | The Supabase anonymous/public key. Used by `get_supabase_public()` for authentication operations. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | _(empty)_ | The Supabase service role key. Used by `get_supabase_admin()` for all data operations. Bypasses row-level security. |
+| `SUPABASE_TABLE_HC_PROFESIONALES` | No | `hc_profesionales` | Override the table name for the `hc_profesionales` repository. Useful if your Supabase schema uses a different table name. |
+
+## Variable details
+
+### `FLASK_SECRET_KEY`
+
+Flask uses this key to cryptographically sign session cookies. Any request with a tampered session cookie will be rejected.
+
+<Warning>
+The default value `dev-secret` is intentionally weak. It exists only to let the application start without configuration during local development. Always set `FLASK_SECRET_KEY` to a long, randomly generated string before deploying to production.
+</Warning>
+
+Generate a secure value with:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+### `SUPABASE_URL`
+
+The base URL of your Supabase project. Find it in the Supabase dashboard under **Project Settings → API → Project URL**.
+
+Example: `https://abcdefghijklmnop.supabase.co`
+
+### `SUPABASE_ANON_KEY`
+
+The anonymous key for your Supabase project. This key is safe to use in client-side code but in Vitacore it is used server-side exclusively for Supabase Auth operations (sign in, sign out).
+
+Find it in the Supabase dashboard under **Project Settings → API → Project API keys → anon public**.
+
+### `SUPABASE_SERVICE_ROLE_KEY`
+
+The service role key grants full access to your Supabase database, bypassing all row-level security policies. Vitacore uses this key in `get_supabase_admin()` for all repository queries.
+
+<Warning>
+Never commit `SUPABASE_SERVICE_ROLE_KEY` to source control and never expose it to the browser. Treat it with the same care as a database root password.
+</Warning>
+
+Find it in the Supabase dashboard under **Project Settings → API → Project API keys → service_role**.
+
+### `SUPABASE_TABLE_HC_PROFESIONALES`
+
+Allows you to override the table name used by the `hc_profesionales` repository. This is useful if your Supabase project uses a custom schema or naming convention.
+
+Defaults to `hc_profesionales` if not set.
+
+## Sample `.env` file
+
+```bash .env
+# Flask
+FLASK_SECRET_KEY=replace-with-a-strong-random-value
+
+# Supabase
+SUPABASE_URL=https://your-project-id.supabase.co
+SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Optional overrides
+# SUPABASE_TABLE_HC_PROFESIONALES=hc_profesionales
+```
+
+<Tip>
+Add `.env` to your `.gitignore` file to prevent secrets from being committed to source control.
+</Tip>
+
+## How variables are loaded
+
+`config.py` reads all variables with `os.getenv()`. Each variable has a fallback default:
+
+```python config.py
+class Config:
+    SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-secret")
+    SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_TABLE_HC_PROFESIONALES = os.getenv(
+        "SUPABASE_TABLE_HC_PROFESIONALES", "hc_profesionales"
+    )
+```
+
+The `Config` class is applied to the Flask app in `app.py`:
+
+```python app.py
+app = Flask(__name__, template_folder="templates")
+app.config.from_object(Config)
+```
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Step-by-step setup including creating the `.env` file.
+  </Card>
+  <Card title="System architecture" icon="sitemap" href="/reference/architecture">
+    How the Supabase clients use these values at runtime.
+  </Card>
+</CardGroup>

@@ -1,0 +1,95 @@
+---
+title: "Route synchronization"
+description: "Sync all Flask endpoints to the Supabase rutas table so the dynamic permission matrix can reference them."
+---
+
+The route synchronization tool scans every registered Flask URL rule and writes it to the `rutas` table in Supabase. The dynamic permission matrix (`@rol_required(usar_matriz=True)`) looks up endpoints in this table to determine whether a given role has access to a route. If a route is not in the table, the matrix cannot evaluate it.
+
+Run this tool after adding new blueprints or routes, and before configuring permissions for new modules.
+
+## Endpoint
+
+```
+GET /admin/sync_rutas
+```
+
+## What it does
+
+When called, the tool:
+
+1. Iterates all URL rules registered in `current_app.url_map`.
+2. Skips any endpoint whose name starts with `static`.
+3. For each remaining rule, upserts a record into the `rutas` table using `endpoint` as the conflict key.
+4. Returns a JSON summary with the count of synchronized routes.
+
+### Example response
+
+```json
+{
+  "status": "ok",
+  "rutas_sincronizadas": 47
+}
+```
+
+If an individual route fails to upsert, the error is printed to the server log and that route is skipped. The remaining routes continue to sync.
+
+## The `rutas` table
+
+Each row in the `rutas` table represents one Flask endpoint:
+
+| Column | Type | Description |
+|---|---|---|
+| `endpoint` | string (unique) | Flask endpoint name (e.g. `pacientes.lista`, `configuracion_usuarios.index`). Used as the upsert conflict key. |
+| `ruta` | string | URL pattern (e.g. `/hc/pacientes/`, `/hc/configuracion/usuarios/<user_id>/editar`). |
+| `metodos` | string | Comma-separated HTTP methods, sorted, with `HEAD` and `OPTIONS` excluded (e.g. `GET`, `GET,POST`). |
+
+Records in this table are referenced by the permission matrix to map endpoints to modules. A role's access to a module is evaluated by looking up the current endpoint in `rutas` and checking whether the role has a permission record for the associated module.
+
+## When to run
+
+Run route sync in these situations:
+
+- After registering a new blueprint in the application.
+- After adding new routes to an existing blueprint.
+- Before configuring permissions for a new module in the permission matrix.
+- After deploying to a new environment where the `rutas` table is empty.
+
+<Note>
+Route sync is an upsert — existing records are updated in place and new records are added. Running it multiple times is safe and does not duplicate entries.
+</Note>
+
+## Running the sync
+
+<Steps>
+  <Step title="Ensure the application is running">
+    The sync tool reads from `current_app.url_map`, so the Flask application must be running and all blueprints must be registered.
+  </Step>
+  <Step title="Call the endpoint">
+    Send a `GET` request to `/admin/sync_rutas` in a browser or with `curl`:
+
+    ```bash
+    curl http://localhost:5000/admin/sync_rutas
+    ```
+  </Step>
+  <Step title="Confirm the response">
+    Check that the response returns `"status": "ok"` and review `rutas_sincronizadas` to confirm the expected number of routes were written.
+  </Step>
+  <Step title="Configure permissions">
+    Return to **Administration → Roles and permissions** and assign module permissions for any newly added routes.
+  </Step>
+</Steps>
+
+<Warning>
+The `/admin/sync_rutas` endpoint has no authentication. Anyone who can reach it can trigger a sync. In production, restrict access to this route — for example, by adding `@login_required` and `@rol_required("admin", usar_matriz=False)`, or by blocking it at the network or reverse proxy level.
+</Warning>
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Role management" icon="shield" href="/admin/roles">
+    Configure module permissions after syncing routes.
+  </Card>
+  <Card title="Roles and permissions" icon="key" href="/auth/roles-permissions">
+    How the `@rol_required` decorator uses the `rutas` table to evaluate dynamic access.
+  </Card>
+</CardGroup>

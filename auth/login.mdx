@@ -1,0 +1,109 @@
+---
+title: "Login and session management"
+description: "How the login flow works, what gets stored in the session, and how logout is handled."
+---
+
+## Endpoints
+
+| Method | URL | Description |
+|---|---|---|
+| `GET` | `/auth/login` | Render the login form |
+| `POST` | `/auth/login` | Submit credentials and create a session |
+| `GET` | `/auth/logout` | Clear the session and redirect to login |
+
+## Login form fields
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `username` | text | Yes | Case-insensitive; normalized to lowercase |
+| `password` | password | Yes | Passed directly to Supabase Auth |
+
+## Login flow
+
+<Steps>
+  <Step title="Check for existing session">
+    If `session["user"]` is already set, the user is redirected to the home page (`/`) immediately without processing the form.
+  </Step>
+  <Step title="Validate form input">
+    Both `username` and `password` must be present. If either is missing, the form is re-rendered with a warning flash message: *"Debes ingresar usuario y contraseña."*
+  </Step>
+  <Step title="Look up the user profile">
+    `obtener_perfil_por_username(username)` queries the `profiles` table for a record matching the submitted username. If no record is found, the form is re-rendered with: *"El usuario no existe."*
+  </Step>
+  <Step title="Check account status">
+    If the profile has `is_active` set to `false`, the form is re-rendered with: *"Tu usuario está inactivo."* Inactive accounts cannot log in.
+  </Step>
+  <Step title="Authenticate with Supabase">
+    The email address from the profile record is passed along with the submitted password to `supabase.auth.sign_in_with_password`. This validates the credentials against Supabase Auth.
+
+    If Supabase does not return a valid `user` and `session` object, the form is re-rendered with: *"Usuario o contraseña incorrectos."*
+  </Step>
+  <Step title="Build and store the session">
+    On success, two keys are written to the Flask session:
+
+    ```python
+    session["user"] = {
+        "id":         perfil["id"],
+        "username":   perfil["username"],
+        "full_name":  perfil.get("full_name") or "",
+        "email":      perfil.get("email") or "",
+        "role_id":    perfil.get("role_id"),
+        "role":       rol_info.get("code", ""),
+        "role_name":  rol_info.get("name", ""),
+    }
+
+    session["supabase_access_token"] = user_session.access_token
+    session["supabase_refresh_token"] = user_session.refresh_token
+    ```
+
+    The user is then redirected to the home page with: *"Bienvenido a Vitacore."*
+  </Step>
+</Steps>
+
+## Session data reference
+
+### `session["user"]`
+
+Contains the user's identity for the duration of their session. All route decorators read from this key.
+
+| Key | Source | Description |
+|---|---|---|
+| `id` | `profiles.id` | Profile UUID |
+| `username` | `profiles.username` | Login username |
+| `full_name` | `profiles.full_name` | Display name |
+| `email` | `profiles.email` | Email linked to Supabase Auth |
+| `role_id` | `profiles.role_id` | UUID used for permission matrix lookups |
+| `role` | `roles.code` | Role code used for static role checks |
+| `role_name` | `roles.name` | Human-readable role label |
+
+### `session["supabase_access_token"]`
+
+The JWT access token returned by Supabase Auth. Use this to initialize an authenticated Supabase client for row-level security (RLS) operations.
+
+### `session["supabase_refresh_token"]`
+
+The refresh token returned by Supabase Auth. Stored for future token refresh flows.
+
+## Logout
+
+Sending a `GET` request to `/auth/logout` calls `session.clear()`, which removes all session keys including `session["user"]`, `session["supabase_access_token"]`, and `session["supabase_refresh_token"]`. The user is then redirected to `/auth/login` with: *"Sesión cerrada correctamente."*
+
+<Warning>
+`session.clear()` invalidates the entire Flask session. It does **not** call `supabase.auth.sign_out()`, so the Supabase Auth session token may remain valid on the Supabase side until it expires naturally.
+</Warning>
+
+## Error handling
+
+All errors during login are caught by a top-level `try/except` block. Unexpected exceptions (e.g. database connectivity issues) are surfaced to the user as: *"Error al iniciar sesión: \<error message\>."* The form is re-rendered and no session is created.
+
+<AccordionGroup>
+  <Accordion title="Why does login use a username but Supabase Auth uses email?">
+    Vitacore profiles are identified by a human-readable username. Supabase Auth, however, manages credentials by email address. The login route bridges this gap by looking up the email in the `profiles` table and passing it to `supabase.auth.sign_in_with_password`. Users never need to know their email address to log in.
+  </Accordion>
+  <Accordion title="What happens if a user's profile has no email set?">
+    The `email` field is retrieved with `perfil.get("email") or ""`. An empty string passed to `sign_in_with_password` will fail Supabase Auth validation, resulting in an *"Usuario o contraseña incorrectos."* error. Ensure every active profile has a valid email linked to a Supabase Auth account.
+  </Accordion>
+  <Accordion title="Can a user be logged in on multiple devices?">
+    Yes. Each login creates an independent Flask session with its own Supabase access token. Calling logout on one device clears only that device's session.
+  </Accordion>
+</AccordionGroup>

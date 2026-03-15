@@ -1,0 +1,133 @@
+---
+title: "Roles and permissions"
+description: "How to define roles, configure per-module permissions, and use the dynamic permission matrix for route access control."
+---
+
+Vitacore uses a role-based access control (RBAC) system built around a **permission matrix**. Each role is assigned a set of permissions per module, and those permissions are checked at the route level using the `@rol_required` decorator.
+
+## Role structure
+
+A role has two identifying fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `code` | string | Lowercase identifier used in code (e.g. `"admin"`, `"medico"`, `"enfermero"`) |
+| `name` | string | Human-readable label shown in the UI (e.g. `"Administrador"`, `"Médico"`) |
+
+The `code` is what the `@rol_required` decorator compares against `session["user"]["role"]`. Keep role codes lowercase and stable — changing a code after routes have been configured with it will break static role checks.
+
+## Permission matrix
+
+Each role has a permission record per module. A permission record contains four boolean flags:
+
+| Permission | Description |
+|---|---|
+| `can_view` | Read access — can see module pages and data |
+| `can_create` | Write access — can submit new records |
+| `can_edit` | Update access — can modify existing records |
+| `can_delete` | Delete access — can remove records |
+
+A role is only granted a permission record for a module if at least one of the four flags is enabled.
+
+## Managing roles and permissions
+
+### Configuring permissions
+
+Navigate to **Configuration → Roles and permissions** (`/hc/configuracion/roles-permisos/`).
+
+<Steps>
+  <Step title="Select a role">
+    Choose the role you want to configure from the role list on the left.
+  </Step>
+  <Step title="Set module permissions">
+    For each module, toggle the `can_view`, `can_create`, `can_edit`, and `can_delete` checkboxes.
+  </Step>
+  <Step title="Save">
+    Submit the form via `POST /hc/configuracion/roles-permisos/`. The system replaces all existing permissions for that role with the submitted values — unchecked modules are removed from the matrix.
+  </Step>
+</Steps>
+
+<Warning>
+Saving the permissions form **replaces all permissions** for the selected role. Any module not included in the submission will lose its permission record. Always review all modules before saving.
+</Warning>
+
+### Creating a new role
+
+Send a `POST` request to `/hc/configuracion/roles-permisos/crear` with the following form fields:
+
+| Field | Required | Description |
+|---|---|---|
+| `code` | Yes | Lowercase role identifier. Normalized to lowercase automatically. |
+| `name` | Yes | Display name for the role. |
+
+After creating the role, return to the permissions page to configure its module access.
+
+<Tip>
+Create roles with the narrowest permissions needed. Start with only `can_view` and add write permissions deliberately as requirements are confirmed.
+</Tip>
+
+## Dynamic permission check
+
+When `@rol_required(usar_matriz=True)` is applied to a route, Vitacore calls:
+
+```python
+tiene_permiso_endpoint(role_id=role_id, endpoint=endpoint)
+```
+
+This function receives the user's `role_id` (from `session["user"]["role_id"]`) and the current Flask endpoint name (e.g. `"pacientes.lista"`). It queries the permission matrix to determine whether that role has any access to the module associated with the endpoint.
+
+### How endpoints are mapped to modules
+
+Flask endpoint names must be registered in the route permission table before the dynamic check can authorize them. Use the route synchronization tool to keep this table up to date.
+
+<Card title="Route synchronization" icon="rotate" href="/admin/route-sync">
+  Scan and register all Flask endpoints into the permission matrix so that `@rol_required(usar_matriz=True)` can evaluate them correctly.
+</Card>
+
+## Combining static and dynamic checks
+
+`@rol_required` evaluates both checks and grants access if **either** passes:
+
+```python
+# Access granted if:
+# - user.role == "admin", OR
+# - the dynamic matrix permits the endpoint for the user's role_id
+@bp.route("/reports/export")
+@login_required
+@rol_required("admin", usar_matriz=True)
+def export_reports():
+    ...
+```
+
+To enforce **only** the dynamic matrix (recommended for most routes):
+
+```python
+@bp.route("/patients")
+@login_required
+@rol_required(usar_matriz=True)
+def patient_list():
+    ...
+```
+
+To enforce **only** a static role list (useful for system-level routes not tied to a module):
+
+```python
+@bp.route("/admin/settings")
+@login_required
+@rol_required("admin", usar_matriz=False)
+def admin_settings():
+    ...
+```
+
+<Note>
+When `roles_permitidos` is empty and `usar_matriz=True`, the decorator skips the static check entirely and relies exclusively on the permission matrix.
+</Note>
+
+## Access denied behavior
+
+When a user fails both checks, the response depends on the request type:
+
+| Request type | Response |
+|---|---|
+| Regular browser request | Renders `acceso_denegado.html` with HTTP `403` |
+| JSON or AJAX (`X-Requested-With: XMLHttpRequest`) | Returns `{"error": "No tienes permisos para acceder a este recurso."}` with HTTP `403` |

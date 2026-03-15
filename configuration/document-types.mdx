@@ -1,0 +1,72 @@
+---
+title: "Document types"
+description: "Configure the identification document types used to register patients and healthcare professionals in Vitacore."
+---
+
+Document types define the forms of identification accepted by your organization (for example, national identity card, passport, or foreign ID). They are referenced during patient registration and when creating professional records.
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `codigo` | Yes | Short unique code for the document type (e.g., `CC`, `PA`, `CE`). Must be unique. |
+| `nombre` | Yes | Full descriptive name (e.g., "Cédula de ciudadanía", "Pasaporte"). |
+| `descripcion` | No | Optional additional context about when this document type is used. |
+| `estado` | — | Status: `ACTIVO` or `INACTIVO`. Defaults to `ACTIVO` on creation. |
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all document types | `GET` | `/hc/configuracion/tipos-documento` |
+| New document type form | `GET` | `/hc/configuracion/tipos-documento/nuevo` |
+| Create document type | `POST` | `/hc/configuracion/tipos-documento/nuevo` |
+| Edit document type form | `GET` | `/hc/configuracion/tipos-documento/editar/<item_id>` |
+| Update document type | `POST` | `/hc/configuracion/tipos-documento/editar/<item_id>` |
+| Toggle status | `POST` | `/hc/configuracion/tipos-documento/toggle/<item_id>` |
+
+## Managing document types
+
+### Creating a document type
+
+<Steps>
+  <Step title="Open the new document type form">
+    Navigate to **Configuration → Document types** and click **Nuevo tipo de documento**, or go directly to `/hc/configuracion/tipos-documento/nuevo`.
+  </Step>
+  <Step title="Enter the code and name">
+    Provide a short, unique `codigo` that staff will recognize at a glance (e.g., `CC` for national ID). Enter the full `nombre` and an optional `descripcion`.
+  </Step>
+  <Step title="Save">
+    Submit the form. The document type is created with status `ACTIVO`.
+  </Step>
+</Steps>
+
+### Editing a document type
+
+Click **Editar** in the list or navigate to `/hc/configuracion/tipos-documento/editar/<item_id>`. All fields are editable. The `codigo` must remain unique — changing it to a code already in use will fail validation.
+
+### Toggling status
+
+Click the status badge to toggle between `ACTIVO` and `INACTIVO` via a `POST` to `/hc/configuracion/tipos-documento/toggle/<item_id>`.
+
+<Warning>
+Deactivating a document type prevents it from appearing in the identification selector during new patient or professional registration. Existing records that reference the document type are not affected, but you will not be able to create new records using an inactive type.
+</Warning>
+
+## Where document types are used
+
+- **Patient registration** — patients are identified by document type and number.
+- **Professional registration** — professionals are identified by document type and number.
+
+Document types should be one of the first items configured in a new Vitacore installation.
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Professionals" icon="user-doctor" href="/configuration/professionals">
+    Document types are required when registering professionals.
+  </Card>
+  <Card title="Configuration overview" icon="gear" href="/configuration/overview">
+    See the full recommended setup order.
+  </Card>
+</CardGroup>

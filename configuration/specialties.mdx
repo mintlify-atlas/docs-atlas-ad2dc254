@@ -1,0 +1,72 @@
+---
+title: "Specialties"
+description: "Define the medical specialties offered by your organization. Specialties are linked to services and healthcare professionals."
+---
+
+Specialties represent the clinical disciplines practiced at your organization (e.g., Cardiology, Pediatrics, Internal Medicine). They act as a shared reference for both medical services and professional records — a service belongs to a specialty, and a professional is assigned one.
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `codigo` | Yes | Short unique code for the specialty (e.g., `CARD`, `PED`). Must be unique. |
+| `nombre` | Yes | Full name of the specialty. |
+| `descripcion` | No | Optional description of the specialty's scope or focus. |
+| `estado` | — | Status: `ACTIVA` or `INACTIVA`. Defaults to `ACTIVA` on creation. |
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all specialties | `GET` | `/hc/configuracion/especialidades` |
+| New specialty form | `GET` | `/hc/configuracion/especialidades/nueva` |
+| Create specialty | `POST` | `/hc/configuracion/especialidades/nueva` |
+| Edit specialty form | `GET` | `/hc/configuracion/especialidades/editar/<item_id>` |
+| Update specialty | `POST` | `/hc/configuracion/especialidades/editar/<item_id>` |
+| Toggle status | `POST` | `/hc/configuracion/especialidades/toggle/<item_id>` |
+
+## Managing specialties
+
+### Creating a specialty
+
+<Steps>
+  <Step title="Open the new specialty form">
+    Navigate to **Configuration → Specialties** and click **Nueva especialidad**, or go directly to `/hc/configuracion/especialidades/nueva`.
+  </Step>
+  <Step title="Enter the code and name">
+    Provide a unique `codigo` and the full specialty `nombre`. Optionally add a `descripcion`.
+  </Step>
+  <Step title="Save">
+    Submit the form. The specialty is saved with status `ACTIVA`.
+  </Step>
+</Steps>
+
+### Editing a specialty
+
+Click **Editar** in the specialty list or go to `/hc/configuracion/especialidades/editar/<item_id>`. All fields are editable. The `codigo` must remain unique across all specialties.
+
+### Toggling status
+
+Click the status badge in the list to toggle between `ACTIVA` and `INACTIVA` via a `POST` to `/hc/configuracion/especialidades/toggle/<item_id>`.
+
+<Warning>
+Deactivating a specialty does not remove it from existing services or professional records. However, it will no longer appear in the active specialty selector when creating new services or professionals. Reactivate the specialty if you need to assign it again.
+</Warning>
+
+## Where specialties are used
+
+- **Services** — each service is linked to a specialty via `especialidad_id`.
+- **Professionals** — each professional is assigned one specialty.
+
+Create specialties before creating services or registering professionals.
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Services" icon="list-check" href="/configuration/services">
+    Create medical services under each specialty.
+  </Card>
+  <Card title="Professionals" icon="user-doctor" href="/configuration/professionals">
+    Assign a specialty when registering professionals.
+  </Card>
+</CardGroup>

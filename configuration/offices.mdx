@@ -1,0 +1,77 @@
+---
+title: "Offices"
+description: "Create and manage consultorios — the individual consulting rooms or examination spaces within each sede."
+---
+
+A consultorio is a consulting room, examination room, or any physical space where patient care takes place. Each consultorio belongs to one sede. Professionals are assigned to a consultorio when they are registered.
+
+<Warning>
+At least one sede must exist before you can create an office. The sede selector on the office form will be empty if no sedes have been created yet. Go to [Headquarters](/configuration/headquarters) first.
+</Warning>
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `sede_id` | Yes | The sede this office belongs to. Selected from active sedes. |
+| `codigo` | Yes | Short unique code for the office (e.g., `CONS-01`). Must be unique. |
+| `nombre` | Yes | Full name or label for the office (e.g., "Consultorio 1 – Cardiología"). |
+| `piso` | No | Floor or level within the building. |
+| `descripcion` | No | Optional description of the space or its use. |
+| `estado` | — | Status: `ACTIVO` or `INACTIVO`. Defaults to `ACTIVO` on creation. |
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all offices | `GET` | `/hc/configuracion/consultorios` |
+| New office form | `GET` | `/hc/configuracion/consultorios/nuevo` |
+| Create office | `POST` | `/hc/configuracion/consultorios/nuevo` |
+| Edit office form | `GET` | `/hc/configuracion/consultorios/editar/<item_id>` |
+| Update office | `POST` | `/hc/configuracion/consultorios/editar/<item_id>` |
+| Toggle status | `POST` | `/hc/configuracion/consultorios/toggle/<item_id>` |
+
+## Managing offices
+
+### Creating an office
+
+<Steps>
+  <Step title="Verify a sede exists">
+    Navigate to **Configuration → Headquarters** and confirm at least one active sede is listed.
+  </Step>
+  <Step title="Open the new office form">
+    Navigate to **Configuration → Offices** and click **Nuevo consultorio**, or go to `/hc/configuracion/consultorios/nuevo`.
+  </Step>
+  <Step title="Select the sede">
+    Choose the sede this office belongs to from the `sede_id` dropdown.
+  </Step>
+  <Step title="Fill in office details">
+    Enter a unique `codigo` and a descriptive `nombre`. Add `piso` and `descripcion` as needed.
+  </Step>
+  <Step title="Save">
+    Submit the form. The office is created with status `ACTIVO`.
+  </Step>
+</Steps>
+
+### Editing an office
+
+Click **Editar** in the office list or go to `/hc/configuracion/consultorios/editar/<item_id>`. All fields including `sede_id` are editable. Changing the sede reassigns the office to a different location.
+
+### Toggling status
+
+Click the status badge in the list to toggle between `ACTIVO` and `INACTIVO` via a `POST` to `/hc/configuracion/consultorios/toggle/<item_id>`.
+
+<Note>
+Deactivating an office does not remove professionals currently assigned to it. It signals the space is not in active use. The office will no longer appear in the active consultorio selector when registering new professionals.
+</Note>
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Headquarters" icon="building" href="/configuration/headquarters">
+    Create sedes before creating offices.
+  </Card>
+  <Card title="Professionals" icon="user-doctor" href="/configuration/professionals">
+    Assign professionals to a specific office.
+  </Card>
+</CardGroup>

@@ -1,0 +1,84 @@
+---
+title: "Configuration overview"
+description: "Manage the organizational and clinical catalog data that powers the rest of Vitacore — headquarters, offices, specialties, services, professionals, and more."
+---
+
+The configuration module lives at `/hc/configuracion`. It provides all the reference data that other modules depend on: where your organization operates, who works there, what specialties and services are offered, and how patients are identified.
+
+Set up these catalogs before using clinical or scheduling features. Several items have hard dependencies — you cannot create an office without a sede, and you cannot assign a professional without document types, specialties, sedes, and consultorios already in place.
+
+## Dependency order
+
+Follow this sequence when configuring a new Vitacore installation:
+
+<Steps>
+  <Step title="Document types">
+    Create the identification document types used to register patients and professionals (e.g., national ID, passport).
+
+    → [Document types](/configuration/document-types)
+  </Step>
+  <Step title="Countries">
+    Populate the country catalog if your patient population includes international records.
+
+    → [Countries](/configuration/countries)
+  </Step>
+  <Step title="Headquarters (sedes)">
+    Define the physical locations where your organization operates. Every office belongs to a sede.
+
+    → [Headquarters](/configuration/headquarters)
+  </Step>
+  <Step title="Specialties">
+    Create the medical specialties offered at your organization. Services and professionals are linked to specialties.
+
+    → [Specialties](/configuration/specialties)
+  </Step>
+  <Step title="Services">
+    Define the medical services available under each specialty.
+
+    → [Services](/configuration/services)
+  </Step>
+  <Step title="Offices (consultorios)">
+    Create consulting rooms and associate each one with a sede.
+
+    → [Offices](/configuration/offices)
+  </Step>
+  <Step title="Professionals">
+    Register healthcare professionals and assign them to a sede, consultorio, and specialty.
+
+    → [Professionals](/configuration/professionals)
+  </Step>
+</Steps>
+
+<Warning>
+Skipping steps will cause form dropdowns to appear empty when creating records downstream. For example, creating an office before any sede exists will leave the sede selector blank.
+</Warning>
+
+## Module sections
+
+<CardGroup cols={2}>
+  <Card title="Headquarters" icon="building" href="/configuration/headquarters">
+    Manage sedes — the physical branches of your organization.
+  </Card>
+  <Card title="Specialties" icon="stethoscope" href="/configuration/specialties">
+    Define the medical specialties your organization offers.
+  </Card>
+  <Card title="Services" icon="list-check" href="/configuration/services">
+    Catalog the medical services available under each specialty.
+  </Card>
+  <Card title="Offices" icon="door-open" href="/configuration/offices">
+    Create and manage consulting rooms linked to each sede.
+  </Card>
+  <Card title="Professionals" icon="user-doctor" href="/configuration/professionals">
+    Register healthcare professionals and assign their location and specialty.
+  </Card>
+  <Card title="Document types" icon="id-card" href="/configuration/document-types">
+    Configure the identification types used for patients and professionals.
+  </Card>
+  <Card title="Countries" icon="earth-americas" href="/configuration/countries">
+    Manage the country catalog used across patient and professional records.
+  </Card>
+</CardGroup>
+
+## Access control
+
+All configuration routes are protected by `@login_required` and `@rol_required`. Access is governed by the dynamic permission matrix — roles must be granted the appropriate view, create, edit, or delete permission for each configuration endpoint. Contact your system administrator if you cannot access a section.

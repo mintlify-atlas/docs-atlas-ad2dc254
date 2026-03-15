@@ -1,0 +1,201 @@
+---
+title: "Deployment"
+description: "Deploy Vitacore to a production server using gunicorn and a reverse proxy."
+---
+
+## Overview
+
+This guide covers deploying Vitacore to a Linux production server. The recommended stack is:
+
+- **gunicorn** as the WSGI application server
+- **nginx** as the reverse proxy
+- **Supabase** (cloud-hosted) for the database and authentication backend
+
+---
+
+## Environment variables
+
+Vitacore reads all configuration from environment variables at startup via `config.py`. Set these on your server before running the application.
+
+| Variable | Required | Description |
+|---|---|---|
+| `FLASK_SECRET_KEY` | Yes | Signs and verifies session cookies. Must be a long, random, unpredictable string. |
+| `SUPABASE_URL` | Yes | Base URL of your Supabase project (e.g. `https://abc123.supabase.co`). |
+| `SUPABASE_ANON_KEY` | Yes | Public anon key for standard Supabase client requests. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key for privileged server-side operations. Keep this secret. |
+| `SUPABASE_TABLE_HC_PROFESIONALES` | No | Professionals table name. Defaults to `hc_profesionales`. |
+
+<Warning>
+  The `config.py` file falls back to `"dev-secret"` if `FLASK_SECRET_KEY` is not set. **Never deploy with this default.** Anyone who knows the default value can forge session cookies and impersonate any user.
+</Warning>
+
+To generate a strong secret key:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Set variables using your server's environment mechanism — for example, a systemd service file, a `.env` file loaded by your process manager, or your hosting platform's secrets manager.
+
+---
+
+## Install dependencies
+
+On the server, create a virtual environment and install all dependencies including gunicorn:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install gunicorn
+```
+
+---
+
+## Run with gunicorn
+
+Do not run Flask's built-in development server (`python app.py`) in production. Use gunicorn instead:
+
+```bash
+gunicorn --workers 4 --bind 0.0.0.0:8000 app:app
+```
+
+| Option | Value | Description |
+|---|---|---|
+| `--workers` | `4` | Number of worker processes. A common starting point is `(2 × CPU cores) + 1`. |
+| `--bind` | `0.0.0.0:8000` | Listens on port 8000 on all interfaces. nginx will proxy to this port. |
+| `app:app` | — | Module name (`app.py`) and the Flask application object (`app`). |
+
+<Tip>
+  Use a process manager such as **systemd** or **supervisor** to keep gunicorn running across reboots and to handle automatic restarts on failure.
+</Tip>
+
+### Example systemd service
+
+```ini /etc/systemd/system/vitacore.service
+[Unit]
+Description=Vitacore EHR
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/var/www/vitacore
+EnvironmentFile=/var/www/vitacore/.env
+ExecStart=/var/www/vitacore/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:8000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable vitacore
+sudo systemctl start vitacore
+```
+
+---
+
+## Reverse proxy with nginx
+
+Place nginx in front of gunicorn to handle TLS termination, static file serving, and connection management.
+
+```nginx /etc/nginx/sites-available/vitacore
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+<Note>
+  When running behind a reverse proxy, Flask needs to trust the `X-Forwarded-For` and `X-Forwarded-Proto` headers to generate correct URLs and handle HTTPS detection. See [Werkzeug's ProxyFix middleware](https://werkzeug.palletsprojects.com/en/latest/middleware/proxy_fix/) if you need to enable this.
+</Note>
+
+After configuring nginx, obtain a TLS certificate using [Certbot](https://certbot.eff.org/) to serve Vitacore over HTTPS:
+
+```bash
+sudo certbot --nginx -d your-domain.com
+```
+
+---
+
+## Supabase setup
+
+### Required tables
+
+Vitacore expects specific tables to exist in your Supabase project. These tables map to the application's blueprints:
+
+| Table | Blueprint | Purpose |
+|---|---|---|
+| `hc_profesionales` | `hc_configuracion` | Healthcare professionals registry |
+| `hc_pacientes` | `hc_pacientes` | Patient records |
+| `hc_evoluciones` | `hc_evoluciones` | Clinical evolution notes |
+| `hc_signos_vitales` | `hc_signos_vitales` | Vital signs records |
+
+Create these tables in the Supabase SQL editor or via migrations before starting the application.
+
+### Row Level Security (RLS)
+
+Supabase enables Row Level Security by default on new tables. Vitacore uses the **service role key** for server-side database operations, which bypasses RLS. This means:
+
+- All data access is governed by Vitacore's own role and permission system, not Supabase RLS policies.
+- You should still enable RLS on all tables as a defense-in-depth measure to prevent direct API access from the anon key.
+
+<Warning>
+  Do not expose the `SUPABASE_SERVICE_ROLE_KEY` in client-side code or public repositories. It bypasses all RLS policies and grants full database access.
+</Warning>
+
+A minimal RLS policy that blocks all anon access while allowing the service role:
+
+```sql
+-- Enable RLS on a table
+ALTER TABLE hc_pacientes ENABLE ROW LEVEL SECURITY;
+
+-- Block all access from the anon and authenticated roles
+-- (service role bypasses RLS automatically)
+CREATE POLICY "deny_all" ON hc_pacientes
+  FOR ALL
+  TO anon, authenticated
+  USING (false);
+```
+
+Apply this pattern to each Vitacore table.
+
+### Authentication
+
+Vitacore delegates user authentication to Supabase Auth. Users must exist in your project's `auth.users` table. Manage users from the Supabase dashboard under **Authentication → Users** or via the Admin API.
+
+---
+
+## Checklist before going live
+
+<Steps>
+  <Step title="Set a strong FLASK_SECRET_KEY">
+    Generate a cryptographically random key and set it as an environment variable. Confirm it is not the default `"dev-secret"` value.
+  </Step>
+  <Step title="Verify all environment variables are set">
+    All five variables (`FLASK_SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and optionally `SUPABASE_TABLE_HC_PROFESIONALES`) must be present on the server.
+  </Step>
+  <Step title="Enable HTTPS">
+    Install a TLS certificate. Never serve a healthcare application over plain HTTP in production.
+  </Step>
+  <Step title="Restrict database access">
+    Enable RLS on all Supabase tables. Confirm the service role key is only accessible to the server process.
+  </Step>
+  <Step title="Run database migrations">
+    Ensure all required tables exist in Supabase before starting the application.
+  </Step>
+  <Step title="Test with a production user">
+    Log in with a real Supabase Auth user, verify role assignment works, and confirm protected routes are inaccessible without the correct permissions.
+  </Step>
+</Steps>

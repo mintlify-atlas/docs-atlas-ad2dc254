@@ -1,0 +1,102 @@
+---
+title: "Vital signs"
+description: "Record and track patient vital signs including weight, height, blood pressure, heart rate, respiratory rate, and temperature, with automatic BMI calculation."
+---
+
+## Overview
+
+The vital signs module lets clinical staff record anthropometric measurements and physiological parameters for each patient. BMI is calculated automatically from weight and height. All vital sign records are linked to a patient and stored chronologically.
+
+## Vital sign fields
+
+| Field | Unit | Description |
+|-------|------|-------------|
+| `peso` | kg | Body weight |
+| `talla` | cm | Height |
+| `imc` | kg/m² | Body Mass Index — **calculated automatically** |
+| `presion_sistolica` | mmHg | Systolic blood pressure |
+| `presion_diastolica` | mmHg | Diastolic blood pressure |
+| `frecuencia_cardiaca` | bpm | Heart rate |
+| `frecuencia_respiratoria` | breaths/min | Respiratory rate |
+| `temperatura` | °C | Body temperature |
+| `observaciones` | — | Free-text clinical observations |
+
+## BMI calculation
+
+Vitacore calculates BMI automatically when weight and height are provided:
+
+```python
+imc = peso / ((talla / 100) ** 2)
+imc = round(imc, 2)
+```
+
+If `talla` is `0` or not provided, BMI is stored as `0`. Height is entered in centimeters and converted to meters for the calculation.
+
+### BMI reference ranges
+
+| BMI | Classification |
+|-----|---------------|
+| < 18.5 | Underweight |
+| 18.5 – 24.9 | Normal weight |
+| 25.0 – 29.9 | Overweight |
+| 30.0 – 34.9 | Obesity class I |
+| 35.0 – 39.9 | Obesity class II |
+| ≥ 40.0 | Obesity class III |
+
+## Normal reference ranges
+
+| Parameter | Normal range |
+|-----------|-------------|
+| Blood pressure | < 120/80 mmHg (normal); 120–129/< 80 (elevated) |
+| Heart rate | 60–100 bpm (adults) |
+| Respiratory rate | 12–20 breaths/min (adults) |
+| Temperature | 36.1–37.2 °C (oral) |
+
+<Note>
+Reference ranges are for adult patients. Pediatric norms differ significantly. Vitacore stores the raw values — clinical interpretation remains the responsibility of the healthcare professional.
+</Note>
+
+## Routes
+
+| Method | URL | Description |
+|--------|-----|-------------|
+| `GET` | `/hc/signos/paciente/{paciente_id}` | List vital signs for a patient |
+| `GET` | `/hc/signos/nuevo/{paciente_id}` | New vital signs form |
+| `POST` | `/hc/signos/crear/{paciente_id}` | Record vital signs |
+
+## Recording vital signs
+
+<Steps>
+  <Step title="Access the patient record">
+    Navigate to `/hc/pacientes/ver/{id}` for the patient.
+  </Step>
+  <Step title="Open the vital signs list">
+    Navigate to `/hc/signos/paciente/{paciente_id}` to view the patient's vital sign history.
+  </Step>
+  <Step title="Open the new recording form">
+    Navigate to `/hc/signos/nuevo/{paciente_id}` to open the vital signs entry form.
+  </Step>
+  <Step title="Enter the measurements">
+    Enter weight (kg) and height (cm) — BMI will be calculated on save. Fill in blood pressure, heart rate, respiratory rate, and temperature as measured. Add any relevant observations in the free-text field.
+  </Step>
+  <Step title="Save the record">
+    Submit to `POST /hc/signos/crear/{paciente_id}`. The `paciente_id` is taken from the URL.
+  </Step>
+</Steps>
+
+<Tip>
+If weight or height are not measured during a visit, enter `0`. Vitacore will store the entry with `imc = 0` and will not attempt the BMI calculation.
+</Tip>
+
+## Viewing vital sign history
+
+The list at `/hc/signos/paciente/{paciente_id}` shows all recorded vital sign sets for the patient in chronological order. This allows trending of values over time.
+
+<CardGroup cols={2}>
+  <Card title="Patient management" icon="user-injured" href="/clinical/patients">
+    Manage patient demographics
+  </Card>
+  <Card title="Clinical evolutions" icon="notes-medical" href="/clinical/evolutions">
+    Document consultation notes
+  </Card>
+</CardGroup>

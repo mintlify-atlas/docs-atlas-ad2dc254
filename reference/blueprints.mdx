@@ -1,0 +1,172 @@
+---
+title: "Blueprint reference"
+description: "All Flask blueprints registered in Vitacore — URL prefixes, route tables, and access decorators."
+---
+
+Vitacore registers ten Flask blueprints in `app.py`. Each blueprint owns a URL prefix and a set of routes. All routes except the auth endpoints require `@login_required`. Most routes also require `@rol_required`.
+
+<Note>
+Route tables below document the intended route surface based on the blueprint structure. Detailed per-endpoint behaviour is covered in the feature documentation for each area.
+</Note>
+
+## `bp_auth` — Authentication
+
+**Variable:** `bp_auth` | **Prefix:** `/auth` | **Module:** `blueprints/auth/routes.py`
+
+Handles user login and logout. These routes do not require `@login_required`.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/auth/login` | Render the login form |
+| `POST` | `/auth/login` | Submit credentials — validates username/password and writes the Flask session |
+| `GET` | `/auth/logout` | Destroy the Flask session and redirect to `/auth/login` |
+
+See [Login flow](/auth/login) for a detailed walkthrough.
+
+---
+
+## `bp_hc_dashboard` — Dashboard
+
+**Variable:** `bp_hc_dashboard` | **Prefix:** `/hc` | **Module:** `routes.py`
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc` | `@login_required` | Main dashboard view |
+
+---
+
+## `bp_hc_pacientes` — Patients
+
+**Variable:** `bp_hc_pacientes` | **Prefix:** `/hc/pacientes` | **Module:** `blueprints/hc_pacientes/routes.py`
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc/pacientes/` | `@login_required`, `@rol_required` | List all patients |
+| `GET` | `/hc/pacientes/nuevo` | `@login_required`, `@rol_required` | Render new patient form |
+| `POST` | `/hc/pacientes/nuevo` | `@login_required`, `@rol_required` | Create a new patient |
+| `GET` | `/hc/pacientes/<id>` | `@login_required`, `@rol_required` | View patient detail |
+| `GET` | `/hc/pacientes/<id>/editar` | `@login_required`, `@rol_required` | Render edit form |
+| `POST` | `/hc/pacientes/<id>/editar` | `@login_required`, `@rol_required` | Update patient record |
+
+---
+
+## `bp_hc_evoluciones` — Clinical evolutions
+
+**Variable:** `bp_hc_evoluciones` | **Prefix:** `/hc/evoluciones` | **Module:** `blueprints/hc_evoluciones/routes.py`
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc/evoluciones/<paciente_id>` | `@login_required`, `@rol_required` | List evolutions for a patient |
+| `GET` | `/hc/evoluciones/<paciente_id>/nueva` | `@login_required`, `@rol_required` | Render new evolution form |
+| `POST` | `/hc/evoluciones/<paciente_id>/nueva` | `@login_required`, `@rol_required` | Save a new evolution note |
+| `GET` | `/hc/evoluciones/<paciente_id>/<id>` | `@login_required`, `@rol_required` | View a single evolution |
+
+---
+
+## `bp_hc_signos` — Vital signs
+
+**Variable:** `bp_hc_signos` | **Prefix:** `/hc/signos` | **Module:** `blueprints/hc_signos_vitales/routes.py`
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc/signos/<paciente_id>` | `@login_required`, `@rol_required` | List vital sign records for a patient |
+| `GET` | `/hc/signos/<paciente_id>/nuevo` | `@login_required`, `@rol_required` | Render new vital signs form |
+| `POST` | `/hc/signos/<paciente_id>/nuevo` | `@login_required`, `@rol_required` | Save a new vital signs record |
+
+---
+
+## `bp_hc_configuracion` — Healthcare configuration
+
+**Variable:** `bp_hc_configuracion` | **Prefix:** `/hc/configuracion` | **Module:** `blueprints/hc_configuracion/routes.py`
+
+Manages the healthcare catalog: headquarters, specialties, services, offices, professionals, document types, and countries.
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc/configuracion/` | `@login_required`, `@rol_required` | Configuration overview |
+| `GET` / `POST` | `/hc/configuracion/sedes` | `@login_required`, `@rol_required` | List and create headquarters |
+| `GET` / `POST` | `/hc/configuracion/sedes/<id>/editar` | `@login_required`, `@rol_required` | Edit a sede |
+| `GET` / `POST` | `/hc/configuracion/especialidades` | `@login_required`, `@rol_required` | List and create specialties |
+| `GET` / `POST` | `/hc/configuracion/especialidades/<id>/editar` | `@login_required`, `@rol_required` | Edit a specialty |
+| `GET` / `POST` | `/hc/configuracion/servicios` | `@login_required`, `@rol_required` | List and create services |
+| `GET` / `POST` | `/hc/configuracion/servicios/<id>/editar` | `@login_required`, `@rol_required` | Edit a service |
+| `GET` / `POST` | `/hc/configuracion/consultorios` | `@login_required`, `@rol_required` | List and create offices |
+| `GET` / `POST` | `/hc/configuracion/consultorios/<id>/editar` | `@login_required`, `@rol_required` | Edit an office |
+| `GET` / `POST` | `/hc/configuracion/profesionales` | `@login_required`, `@rol_required` | List and create professionals |
+| `GET` / `POST` | `/hc/configuracion/profesionales/<id>/editar` | `@login_required`, `@rol_required` | Edit a professional |
+| `GET` / `POST` | `/hc/configuracion/tipos-documento` | `@login_required`, `@rol_required` | List and create document types |
+| `GET` / `POST` | `/hc/configuracion/tipos-documento/<id>/editar` | `@login_required`, `@rol_required` | Edit a document type |
+| `GET` / `POST` | `/hc/configuracion/paises` | `@login_required`, `@rol_required` | List and create countries |
+| `GET` / `POST` | `/hc/configuracion/paises/<id>/editar` | `@login_required`, `@rol_required` | Edit a country |
+
+---
+
+## `bp_roles` — Role and permission management
+
+**Variable:** `bp_roles` | **Prefix:** `/hc/configuracion/roles-permisos` | **Module:** `blueprints/configuracion_roles/routes.py`
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc/configuracion/roles-permisos/` | `@login_required`, `@rol_required` | List roles and permission matrix |
+| `POST` | `/hc/configuracion/roles-permisos/` | `@login_required`, `@rol_required` | Save permission matrix for a role |
+| `POST` | `/hc/configuracion/roles-permisos/crear` | `@login_required`, `@rol_required` | Create a new role |
+
+See [Role management](/admin/roles) for details.
+
+---
+
+## `bp_usuarios` — User accounts
+
+**Variable:** `bp_usuarios` | **Prefix:** `/hc/configuracion/usuarios` | **Module:** `blueprints/configuracion_usuarios/routes.py`
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/hc/configuracion/usuarios/` | `@login_required`, `@rol_required` | List all user accounts |
+| `GET` / `POST` | `/hc/configuracion/usuarios/nuevo` | `@login_required`, `@rol_required` | Create a new user account |
+| `GET` / `POST` | `/hc/configuracion/usuarios/<id>/editar` | `@login_required`, `@rol_required` | Edit a user account |
+
+See [User management](/admin/users) for details.
+
+---
+
+## `bp_admin` — Admin tools
+
+**Variable:** `bp_admin` | **Prefix:** `/admin` | **Module:** `blueprints/configuracion_roles/routes_admin.py`
+
+Provides the route-sync utility that registers all Flask endpoints in the `rutas` table.
+
+| Method | Path | Decorators | Description |
+|---|---|---|---|
+| `GET` | `/admin/sync-routes` | `@login_required`, `@rol_required` | Render sync confirmation page |
+| `POST` | `/admin/sync-routes` | `@login_required`, `@rol_required` | Execute route sync — upserts all endpoints into `rutas` |
+
+See [Route synchronization](/admin/route-sync) for details.
+
+---
+
+## `bp_permisos_rutas` — Route permissions
+
+**Variable:** `bp_permisos_rutas` | **Prefix:** (configured in `routes_rutas.py`) | **Module:** `blueprints/configuracion_roles/routes_rutas.py`
+
+Manages the mapping between routes and the permission matrix. The URL prefix for this blueprint is not specified in `app.py` and must be confirmed in `routes_rutas.py`.
+
+<Warning>
+The URL prefix for `bp_permisos_rutas` is not declared in `app.py` — it is defined inside `routes_rutas.py`. Check that file to confirm the prefix before constructing links to these routes.
+</Warning>
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="System architecture" icon="sitemap" href="/reference/architecture">
+    How blueprints fit into the overall application structure.
+  </Card>
+  <Card title="Authentication overview" icon="lock" href="/auth/overview">
+    The `@login_required` and `@rol_required` decorators.
+  </Card>
+  <Card title="Route synchronization" icon="rotate" href="/admin/route-sync">
+    Registering endpoints in the permission table.
+  </Card>
+  <Card title="Role management" icon="shield-halved" href="/admin/roles">
+    Configuring the permission matrix per role.
+  </Card>
+</CardGroup>

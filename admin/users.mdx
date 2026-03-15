@@ -1,0 +1,94 @@
+---
+title: "User management"
+description: "Create, edit, and deactivate user accounts in Vitacore, including role assignment and authentication setup."
+---
+
+User accounts give staff members access to Vitacore. Each account is linked to a role that determines what modules the user can view and interact with. Accounts are managed at `/hc/configuracion/usuarios/`.
+
+<Note>
+Vitacore uses Supabase Auth as its authentication backend. When you create a user through the admin panel, the `crear_usuario_con_perfil` function creates both a Supabase Auth entry and a corresponding profile record in the application database. Both records must exist for the user to log in.
+</Note>
+
+## Field reference
+
+| Field | Required | Validation | Description |
+|---|---|---|---|
+| `username` | Yes | Lowercase; must be unique | Login identifier for the user. |
+| `full_name` | Yes | — | Display name shown throughout the application. |
+| `email` | Yes | Valid email format; must be unique | Email address used for authentication. |
+| `password` | Yes | Minimum 6 characters | Initial password. Passed to Supabase Auth at creation time. |
+| `role_id` | Yes | Must reference an active role | Assigns the user's role, which controls module access. |
+| `is_active` | — | `0` or `1` | Account status. Defaults to active on creation. |
+
+<Tip>
+Keep `username` values lowercase and consistent with your organization's naming convention (e.g. `jsmith`, `m.garcia`). This value is used in session data and audit logs.
+</Tip>
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List users and creation form | `GET` | `/hc/configuracion/usuarios/` |
+| Create user | `POST` | `/hc/configuracion/usuarios/` |
+| Edit user form | `GET` | `/hc/configuracion/usuarios/<user_id>/editar` |
+| Update user | `POST` | `/hc/configuracion/usuarios/<user_id>/editar` |
+| Toggle active status | `POST` | `/hc/configuracion/usuarios/<user_id>/estado` |
+
+## Managing users
+
+### Creating a user
+
+<Steps>
+  <Step title="Open user management">
+    Navigate to **Administration → Users** or go to `/hc/configuracion/usuarios/`.
+  </Step>
+  <Step title="Fill in account details">
+    Enter a `username` (lowercase), `full_name`, and `email` address. The email must not already exist in Supabase Auth.
+  </Step>
+  <Step title="Set a password">
+    Enter a password of at least 6 characters. This is passed directly to Supabase Auth and is not stored in plain text.
+  </Step>
+  <Step title="Assign a role">
+    Select an active role from the `role_id` dropdown. At least one role must exist before you can create users. See [Role management](/admin/roles) to create roles first.
+  </Step>
+  <Step title="Submit">
+    Submit the form via `POST /hc/configuracion/usuarios/`. On success, the user is active and can log in immediately.
+  </Step>
+</Steps>
+
+<Warning>
+If no active roles exist, the role dropdown will be empty and user creation will fail. Configure at least one role before adding users.
+</Warning>
+
+### Editing a user
+
+Navigate to `/hc/configuracion/usuarios/<user_id>/editar` or click **Editar** in the users list. You can update the following fields:
+
+- `username`
+- `full_name`
+- `email`
+- `role_id`
+- `is_active` (submitted as `"0"` for inactive or `"1"` for active)
+
+The password is not editable through this form. To reset a password, use the Supabase dashboard or a dedicated password-reset flow.
+
+### Toggling active status
+
+Send a `POST` request to `/hc/configuracion/usuarios/<user_id>/estado` to toggle the user's active state. This calls `cambiar_estado_usuario(user_id, nuevo_estado)` and flips the current `is_active` value.
+
+You can also set `is_active` explicitly through the edit form by submitting the field with value `"0"` (inactive) or `"1"` (active).
+
+<Note>
+Deactivating a user prevents them from logging in but does not delete their Supabase Auth account or profile record. All records created by that user remain intact.
+</Note>
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Role management" icon="shield" href="/admin/roles">
+    Create roles and configure per-module permissions before assigning users.
+  </Card>
+  <Card title="Roles and permissions" icon="key" href="/auth/roles-permissions">
+    Understand how the permission matrix controls route access for each role.
+  </Card>
+</CardGroup>

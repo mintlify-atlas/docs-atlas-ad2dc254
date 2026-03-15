@@ -1,0 +1,235 @@
+---
+title: "Database schema"
+description: "Supabase table definitions inferred from the Vitacore repository layer."
+---
+
+All data is stored in a Supabase-hosted PostgreSQL database. The tables below are inferred from the repository layer source code. Exact column names and constraints are defined in your Supabase project.
+
+<Note>
+Column names listed here are inferred from repository function calls. Verify against your Supabase table editor or migration files if there is any discrepancy.
+</Note>
+
+## User and access control
+
+### `perfiles`
+
+Stores application-level user profiles. Each profile maps to a Supabase Auth user via email.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `username` | text | Login identifier — used instead of email on the login form |
+| `full_name` | text | Display name shown in the UI |
+| `email` | text | Email address linked to the corresponding Supabase Auth account |
+| `role_id` | uuid | Foreign key to `roles.id` |
+| `is_active` | boolean | Whether the account is enabled |
+| `roles` | — | Joined relation — provides `code` and `name` from the `roles` table |
+
+### `roles`
+
+Defines the roles that can be assigned to user profiles.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `code` | text | Stable lowercase identifier (e.g. `admin`, `medico`). Must be unique. |
+| `name` | text | Human-readable display name (e.g. `Administrador`, `Médico`) |
+
+### `rutas`
+
+Registry of Flask endpoints. Populated by the route-sync admin tool. Used as the source of truth for the permission matrix.
+
+| Column | Type | Description |
+|---|---|---|
+| `endpoint` | text | Flask endpoint name (unique). Used as the lookup key during permission checks. |
+| `ruta` | text | URL path associated with the endpoint |
+| `metodos` | text | HTTP methods accepted by the route |
+
+### `role_permisos`
+
+The permission matrix. Each row grants a role access to a specific module.
+
+| Column | Type | Description |
+|---|---|---|
+| `role_id` | uuid | Foreign key to `roles.id` |
+| `modulo_id` | uuid | Foreign key to the module/route being controlled |
+| `can_view` | boolean | Read access |
+| `can_create` | boolean | Create access |
+| `can_edit` | boolean | Update access |
+| `can_delete` | boolean | Delete access |
+
+See [Role management](/admin/roles) for how to configure this matrix through the UI.
+
+---
+
+## Clinical records
+
+### `hc_pacientes`
+
+Core patient demographic record.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `tipo_documento_id` | uuid | Foreign key to `hc_tipos_documento.id` |
+| `numero_documento` | text | Document number |
+| `nombres` | text | First and middle names |
+| `apellidos` | text | Last names |
+| `fecha_nacimiento` | date | Date of birth |
+| `sexo` | text | Biological sex |
+| `telefono` | text | Landline phone number |
+| `celular` | text | Mobile phone number |
+| `email` | text | Patient email address |
+| `direccion` | text | Home address |
+| `aseguradora` | text | Health insurance provider |
+| `estado` | boolean / text | Active/inactive status |
+
+### `hc_evoluciones`
+
+Clinical evolution notes recorded per patient consultation.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `paciente_id` | uuid | Foreign key to `hc_pacientes.id` |
+| `motivo_consulta` | text | Chief complaint |
+| `enfermedad_actual` | text | History of presenting illness |
+| `examen_fisico` | text | Physical examination findings |
+| `impresion_diagnostica` | text | Diagnostic impression |
+| `plan` | text | Treatment plan |
+| `medico` | text | Name or identifier of the treating physician |
+| `created_at` | timestamptz | Record creation timestamp (auto-set by Supabase) |
+
+### `hc_signos_vitales`
+
+Vital signs captured per patient visit.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `paciente_id` | uuid | Foreign key to `hc_pacientes.id` |
+| `peso` | numeric | Weight (kg) |
+| `talla` | numeric | Height (cm) |
+| `imc` | numeric | Body mass index (calculated) |
+| `presion_sistolica` | integer | Systolic blood pressure (mmHg) |
+| `presion_diastolica` | integer | Diastolic blood pressure (mmHg) |
+| `frecuencia_cardiaca` | integer | Heart rate (bpm) |
+| `frecuencia_respiratoria` | integer | Respiratory rate (breaths/min) |
+| `temperatura` | numeric | Body temperature (°C) |
+| `observaciones` | text | Free-text observations |
+
+---
+
+## Healthcare configuration
+
+### `hc_sedes`
+
+Headquarters / clinic locations.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `codigo` | text | Short location code |
+| `nombre` | text | Location name |
+| `ciudad` | text | City |
+| `direccion` | text | Street address |
+| `telefono` | text | Contact phone |
+| `estado` | boolean / text | Active/inactive |
+
+### `hc_especialidades`
+
+Medical specialties.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `codigo` | text | Specialty code |
+| `nombre` | text | Specialty name |
+| `descripcion` | text | Description |
+| `estado` | boolean / text | Active/inactive |
+
+### `hc_servicios`
+
+Medical services, grouped under a specialty.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `codigo` | text | Service code |
+| `nombre` | text | Service name |
+| `especialidad_id` | uuid | Foreign key to `hc_especialidades.id` |
+| `descripcion` | text | Description |
+| `estado` | boolean / text | Active/inactive |
+
+### `hc_consultorios`
+
+Offices / consulting rooms within a sede.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `sede_id` | uuid | Foreign key to `hc_sedes.id` |
+| `sede_nombre` | text | Denormalized sede name (for display) |
+| `codigo` | text | Office code |
+| `nombre` | text | Office name |
+| `piso` | text | Floor |
+| `descripcion` | text | Description |
+| `estado` | boolean / text | Active/inactive |
+
+### `hc_profesionales`
+
+Healthcare professionals registered in the system.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `tipo_documento_id` | uuid | Foreign key to `hc_tipos_documento.id` |
+| `numero_documento` | text | Professional ID document number |
+| `nombres` | text | First and middle names |
+| `apellidos` | text | Last names |
+| `especialidad_id` | uuid | Foreign key to `hc_especialidades.id` |
+| `sede_id` | uuid | Foreign key to `hc_sedes.id` |
+| `consultorio_id` | uuid | Foreign key to `hc_consultorios.id` |
+| `registro_profesional` | text | Professional license/registration number |
+| `correo` | text | Email address |
+| `telefono` | text | Phone number |
+| `estado` | boolean / text | Active/inactive |
+
+---
+
+## Reference catalogs
+
+### `hc_tipos_documento`
+
+Document type catalog (e.g. national ID, passport).
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `codigo` | text | Document type code |
+| `nombre` | text | Document type name |
+| `descripcion` | text | Description |
+| `estado` | boolean / text | Active/inactive |
+
+### `hc_paises`
+
+Country catalog.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | uuid | Primary key |
+| `codigo_iso2` | text | ISO 3166-1 alpha-2 code (e.g. `CO`) |
+| `codigo_iso3` | text | ISO 3166-1 alpha-3 code (e.g. `COL`) |
+| `nombre` | text | Country name |
+| `estado` | boolean / text | Active/inactive |
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="System architecture" icon="sitemap" href="/reference/architecture">
+    How Vitacore accesses the database through the repository layer.
+  </Card>
+  <Card title="Environment variables" icon="key" href="/reference/environment-variables">
+    Supabase connection configuration.
+  </Card>
+</CardGroup>

@@ -1,0 +1,67 @@
+---
+title: "Headquarters"
+description: "Create and manage sedes — the physical branches or locations where your organization operates."
+---
+
+A sede (headquarters or branch) represents a physical location in your organization. Every office (consultorio) must belong to a sede, so you need at least one sede before you can create offices or assign professionals to a location.
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `codigo` | Yes | Short unique identifier for the sede (e.g., `BOG01`). Must be unique across all sedes. |
+| `nombre` | Yes | Full name of the sede. |
+| `ciudad` | No | City where the sede is located. |
+| `direccion` | No | Street address. |
+| `telefono` | No | Contact phone number. |
+| `estado` | — | Status: `ACTIVA` or `INACTIVA`. Defaults to `ACTIVA` on creation. |
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all sedes | `GET` | `/hc/configuracion/sedes` |
+| New sede form | `GET` | `/hc/configuracion/sedes/nueva` |
+| Create sede | `POST` | `/hc/configuracion/sedes/nueva` |
+| Edit sede form | `GET` | `/hc/configuracion/sedes/editar/<sede_id>` |
+| Update sede | `POST` | `/hc/configuracion/sedes/editar/<sede_id>` |
+| Toggle status | `POST` | `/hc/configuracion/sedes/toggle/<sede_id>` |
+
+## Managing sedes
+
+### Creating a sede
+
+<Steps>
+  <Step title="Open the new sede form">
+    Navigate to **Configuration → Headquarters** and click **Nueva sede**. You can also go directly to `/hc/configuracion/sedes/nueva`.
+  </Step>
+  <Step title="Fill in the required fields">
+    Enter a unique `codigo` and the full `nombre`. Add `ciudad`, `direccion`, and `telefono` as needed.
+  </Step>
+  <Step title="Save">
+    Submit the form. The sede is created with status `ACTIVA` and appears in the list immediately.
+  </Step>
+</Steps>
+
+### Editing a sede
+
+Click **Editar** next to any sede in the list, or navigate to `/hc/configuracion/sedes/editar/<sede_id>`. All fields are editable. The `codigo` must remain unique — if another sede already uses the code you enter, the form will reject the submission.
+
+### Toggling status
+
+Click the status badge on any sede in the list to toggle between `ACTIVA` and `INACTIVA`. This sends a `POST` request to `/hc/configuracion/sedes/toggle/<sede_id>`.
+
+<Note>
+Deactivating a sede does not delete it or remove its associated offices and professionals. It signals that the location is no longer in active use. Downstream records referencing the sede are not affected.
+</Note>
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Offices" icon="door-open" href="/configuration/offices">
+    Create consulting rooms linked to this sede.
+  </Card>
+  <Card title="Professionals" icon="user-doctor" href="/configuration/professionals">
+    Assign professionals to a sede and consultorio.
+  </Card>
+</CardGroup>

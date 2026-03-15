@@ -1,0 +1,107 @@
+---
+title: "Role management"
+description: "Create roles and configure per-module permissions using the Vitacore permission matrix."
+---
+
+Roles define what areas of Vitacore a user can access. Every user account is assigned exactly one role, and that role's permission matrix determines which modules the user can view, create, edit, or delete.
+
+Role management is available at `/hc/configuracion/roles-permisos/`.
+
+## Role structure
+
+A role has two fields:
+
+| Field | Description |
+|---|---|
+| `code` | Lowercase identifier used internally (e.g. `admin`, `medico`, `enfermero`). Must be unique. |
+| `name` | Human-readable display name shown in the UI (e.g. `Administrador`, `Médico`). |
+
+The `code` is what the `@rol_required` decorator compares against `session["user"]["role"]`. Use short, stable, lowercase values — changing a `code` after routes have been configured with it breaks static role checks.
+
+## Permission matrix
+
+Each role has a set of permissions per module. A permission record contains four boolean flags:
+
+| Permission | Description |
+|---|---|
+| `can_view` | Read access — user can see module pages and data. |
+| `can_create` | Write access — user can submit new records. |
+| `can_edit` | Update access — user can modify existing records. |
+| `can_delete` | Delete access — user can remove records. |
+
+Permissions are checked at the route level. See [Roles and permissions](/auth/roles-permissions) for details on how the `@rol_required` decorator evaluates the matrix at runtime.
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List roles and permission matrix | `GET` | `/hc/configuracion/roles-permisos/` |
+| Save permissions for a role | `POST` | `/hc/configuracion/roles-permisos/` |
+| Create a new role | `POST` | `/hc/configuracion/roles-permisos/crear` |
+
+## Managing roles
+
+### Creating a role
+
+<Steps>
+  <Step title="Open role management">
+    Navigate to **Administration → Roles and permissions** or go to `/hc/configuracion/roles-permisos/`.
+  </Step>
+  <Step title="Enter role details">
+    Fill in the `code` field with a lowercase identifier and the `name` field with a display name.
+  </Step>
+  <Step title="Submit">
+    Submit to `POST /hc/configuracion/roles-permisos/crear`. The role is created with no permissions. Configure its module access next.
+  </Step>
+</Steps>
+
+<Tip>
+Create roles with the narrowest permissions needed. Start with only `can_view` enabled and add write permissions deliberately as requirements are confirmed.
+</Tip>
+
+### Assigning permissions to a role
+
+<Steps>
+  <Step title="Select a role">
+    On the roles page, select the role you want to configure from the role list.
+  </Step>
+  <Step title="Review the permission matrix">
+    For each module in the matrix, toggle the `can_view`, `can_create`, `can_edit`, and `can_delete` checkboxes.
+  </Step>
+  <Step title="Save">
+    Submit the form via `POST /hc/configuracion/roles-permisos/`. Vitacore saves a permission record for each module where at least one flag is checked.
+  </Step>
+</Steps>
+
+<Warning>
+Saving the permissions form **replaces all permissions** for the selected role. Any module not included in the submission will have its permission record removed. Review all modules before saving.
+</Warning>
+
+## Permission records
+
+Each row saved to the permission matrix has the following structure:
+
+| Field | Description |
+|---|---|
+| `role_id` | The role this permission applies to. |
+| `modulo_id` | The module this permission applies to. |
+| `can_view` | Boolean — read access. |
+| `can_create` | Boolean — create access. |
+| `can_edit` | Boolean — edit access. |
+| `can_delete` | Boolean — delete access. |
+
+Modules with no flags enabled are not saved — a role that can't view a module simply has no permission record for it.
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="User management" icon="user" href="/admin/users">
+    Assign roles to user accounts.
+  </Card>
+  <Card title="Roles and permissions" icon="key" href="/auth/roles-permissions">
+    Technical reference for the `@rol_required` decorator and dynamic permission checks.
+  </Card>
+  <Card title="Route synchronization" icon="rotate" href="/admin/route-sync">
+    Register Flask endpoints in the permission table before configuring module access.
+  </Card>
+</CardGroup>

@@ -1,0 +1,72 @@
+---
+title: "Services"
+description: "Define the medical services your organization provides. Each service is linked to a specialty."
+---
+
+Medical services are the specific procedures or consultations your organization offers (e.g., General Consultation, Echocardiogram, Prenatal Control). Each service belongs to exactly one specialty.
+
+<Note>
+You must create at least one specialty before you can create a service. The specialty selector on the service form will be empty otherwise.
+</Note>
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `codigo` | No | Short code or identifier for the service (e.g., `CONS-GEN`). |
+| `nombre` | Yes | Full name of the service. |
+| `especialidad_id` | Yes | The specialty this service belongs to. Selected from active specialties. |
+| `descripcion` | No | Optional description of what the service includes. |
+
+<Note>
+Services do not have an explicit `estado` toggle in the current implementation. To remove a service from active use, edit it and reassign or leave it unlinked from scheduling.
+</Note>
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all services | `GET` | `/hc/configuracion/servicios` |
+| New service form | `GET` | `/hc/configuracion/servicios/nuevo` |
+| Create service | `POST` | `/hc/configuracion/servicios/crear` |
+| Edit service form | `GET` | `/hc/configuracion/servicios/<id>/editar` |
+| Update service | `POST` | `/hc/configuracion/servicios/<id>/actualizar` |
+| Toggle status | `POST` | `/hc/configuracion/servicios/toggle/<item_id>` |
+
+<Tip>
+Note that services use a two-step URL pattern: the form is at `/nuevo` while the create action posts to `/crear`. Similarly, the edit form is at `/<id>/editar` and the update action posts to `/<id>/actualizar`. This differs from other configuration modules.
+</Tip>
+
+## Managing services
+
+### Creating a service
+
+<Steps>
+  <Step title="Confirm specialties exist">
+    Go to **Configuration → Specialties** and verify at least one active specialty is listed. Without an active specialty, you cannot save a new service.
+  </Step>
+  <Step title="Open the new service form">
+    Navigate to **Configuration → Services** and click **Nuevo servicio**, or go to `/hc/configuracion/servicios/nuevo`.
+  </Step>
+  <Step title="Fill in the fields">
+    Select the `especialidad_id` from the dropdown. Enter the service `nombre`. Optionally add a `codigo` and `descripcion`.
+  </Step>
+  <Step title="Save">
+    Submit the form. The POST goes to `/hc/configuracion/servicios/crear`.
+  </Step>
+</Steps>
+
+### Editing a service
+
+Click **Editar** in the service list or navigate to `/hc/configuracion/servicios/<id>/editar`. Changes are submitted via `POST` to `/hc/configuracion/servicios/<id>/actualizar`.
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Specialties" icon="stethoscope" href="/configuration/specialties">
+    Specialties must exist before creating services.
+  </Card>
+  <Card title="Professionals" icon="user-doctor" href="/configuration/professionals">
+    Professionals are assigned a specialty, which groups the services they provide.
+  </Card>
+</CardGroup>

@@ -1,0 +1,104 @@
+---
+title: "Professionals"
+description: "Register and manage the healthcare professionals in your organization, including their specialty, location, and professional credentials."
+---
+
+The professionals directory contains every healthcare professional active in Vitacore. Professionals are linked to document types, specialties, sedes, and consultorios — all of which must be configured before you can create a professional record.
+
+## Prerequisites
+
+Before registering a professional, confirm all of the following exist:
+
+- At least one [document type](/configuration/document-types)
+- At least one [specialty](/configuration/specialties)
+- At least one [sede](/configuration/headquarters)
+- At least one [office (consultorio)](/configuration/offices) in that sede
+
+<Warning>
+If any prerequisite catalog is empty, the corresponding dropdown on the professional registration form will be blank and you will not be able to save the record.
+</Warning>
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `tipo_documento_id` | Yes | Document type used for identification. Selected from active document types. |
+| `numero_documento` | Yes | Document number. Must be unique within the same document type. |
+| `nombres` | Yes | Given name(s) of the professional. |
+| `apellidos` | Yes | Family name(s) of the professional. |
+| `especialidad_id` | Yes | The medical specialty assigned to this professional. |
+| `sede_id` | Yes | The sede where the professional is based. |
+| `consultorio_id` | Yes | The specific consultorio assigned to the professional. |
+| `registro_profesional` | No | Professional license or registration number issued by the licensing authority. |
+| `correo` | No | Professional email address. |
+| `telefono` | No | Contact phone number. |
+| `estado` | — | Status: `ACTIVO` or `INACTIVO`. Defaults to `ACTIVO` on creation. |
+
+<Tip>
+The `numero_documento` uniqueness constraint is scoped per `tipo_documento_id`. Two professionals can share the same number if they use different document types, though this is uncommon.
+</Tip>
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all professionals | `GET` | `/hc/configuracion/profesionales` |
+| New professional form | `GET` | `/hc/configuracion/profesionales/nuevo` |
+| Create professional | `POST` | `/hc/configuracion/profesionales/nuevo` |
+| Edit professional form | `GET` | `/hc/configuracion/profesionales/editar/<item_id>` |
+| Update professional | `POST` | `/hc/configuracion/profesionales/editar/<item_id>` |
+| Toggle status | `POST` | `/hc/configuracion/profesionales/toggle/<item_id>` |
+
+## Managing professionals
+
+### Registering a professional
+
+<Steps>
+  <Step title="Confirm prerequisites">
+    Verify that document types, specialties, sedes, and consultorios are all configured and have at least one active record each.
+  </Step>
+  <Step title="Open the new professional form">
+    Navigate to **Configuration → Professionals** and click **Nuevo profesional**, or go to `/hc/configuracion/profesionales/nuevo`.
+  </Step>
+  <Step title="Enter identity information">
+    Select the `tipo_documento_id` and enter the `numero_documento`. Fill in `nombres` and `apellidos`.
+  </Step>
+  <Step title="Assign specialty and location">
+    Select the `especialidad_id`, `sede_id`, and `consultorio_id`. The consultorio dropdown typically filters to show only offices belonging to the selected sede.
+  </Step>
+  <Step title="Add credentials and contact details">
+    Optionally enter `registro_profesional`, `correo`, and `telefono`.
+  </Step>
+  <Step title="Save">
+    Submit the form. The professional is registered with status `ACTIVO`.
+  </Step>
+</Steps>
+
+### Editing a professional
+
+Click **Editar** in the professionals list or navigate to `/hc/configuracion/profesionales/editar/<item_id>`. All fields are editable, including the sede and consultorio assignment.
+
+### Toggling status
+
+Click the status badge to toggle between `ACTIVO` and `INACTIVO` via a `POST` to `/hc/configuracion/profesionales/toggle/<item_id>`.
+
+<Note>
+Deactivating a professional preserves all their historical records. They will no longer appear in active dropdowns for scheduling or assignment, but their past clinical records remain intact.
+</Note>
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Document types" icon="id-card" href="/configuration/document-types">
+    Configure identification types before registering professionals.
+  </Card>
+  <Card title="Specialties" icon="stethoscope" href="/configuration/specialties">
+    Assign the correct specialty to each professional.
+  </Card>
+  <Card title="Headquarters" icon="building" href="/configuration/headquarters">
+    Professionals are assigned to a sede.
+  </Card>
+  <Card title="Offices" icon="door-open" href="/configuration/offices">
+    Professionals are assigned to a specific consultorio.
+  </Card>
+</CardGroup>

@@ -1,0 +1,99 @@
+---
+title: "Authentication overview"
+description: "How Vitacore handles identity verification and route protection using a two-layer authentication model."
+---
+
+Vitacore uses a two-layer authentication model: application-level user profiles stored in Supabase, and Supabase Auth for credential validation. Flask server-side sessions carry the authenticated user's identity across requests.
+
+## Two-layer architecture
+
+The system separates two concerns:
+
+1. **User profiles** — A `profiles` table in Supabase stores application-specific data: username, full name, email, and role assignment. This is where Vitacore looks up who a user is.
+2. **Credential validation** — Supabase Auth validates the user's password. Vitacore retrieves the email from the profile record, then calls `supabase.auth.sign_in_with_password` to confirm the credentials.
+
+This design lets Vitacore users log in with a **username** (not an email address), while delegating password storage and validation to Supabase Auth.
+
+## Session structure
+
+After a successful login, two keys are written to the Flask session:
+
+**`session["user"]`** — a dictionary with the authenticated user's identity:
+
+| Key | Type | Description |
+|---|---|---|
+| `id` | string | Profile UUID from Supabase |
+| `username` | string | The username used to log in |
+| `full_name` | string | Display name |
+| `email` | string | Email address linked to Supabase Auth |
+| `role_id` | string | UUID of the assigned role |
+| `role` | string | Role code (e.g. `"admin"`, `"medico"`) |
+| `role_name` | string | Human-readable role name |
+
+**`session["supabase_access_token"]`** — the access token returned by Supabase Auth, available for making authenticated Supabase requests on behalf of the user.
+
+## Route protection
+
+Two decorators protect routes. Apply them in order: `@login_required` first, then `@rol_required`.
+
+### `login_required`
+
+Redirects unauthenticated requests to `/auth/login`. For JSON or AJAX requests (`X-Requested-With: XMLHttpRequest`), it returns a `401` JSON response instead of a redirect.
+
+```python
+from blueprints.auth.decorators import login_required
+
+@bp.route("/patients")
+@login_required
+def patient_list():
+    ...
+```
+
+### `rol_required`
+
+Checks whether the authenticated user is authorized to access a route. It supports two modes that can be combined:
+
+- **Static role check** — pass one or more role codes as arguments. Access is granted if the user's `role` matches any of them.
+- **Dynamic matrix check** — enabled by default (`usar_matriz=True`). Calls `tiene_permiso_endpoint(role_id, endpoint)` to look up whether the user's role has permission for the current Flask endpoint in the permission matrix.
+
+If either check passes, the request proceeds. If both fail, the user sees a `403 Acceso denegado` response.
+
+```python
+from blueprints.auth.decorators import login_required, rol_required
+
+# Allow only administrators — static check
+@bp.route("/admin/settings")
+@login_required
+@rol_required("admin")
+def admin_settings():
+    ...
+
+# Allow admins and doctors — static check with multiple roles
+@bp.route("/clinical/notes")
+@login_required
+@rol_required("admin", "medico")
+def clinical_notes():
+    ...
+
+# Use the dynamic permission matrix only
+@bp.route("/reports")
+@login_required
+@rol_required(usar_matriz=True)
+def reports():
+    ...
+```
+
+<Note>
+When no role codes are passed to `@rol_required`, it falls through directly to the dynamic matrix check. This is the recommended approach for most routes, since it lets you manage access from the roles configuration UI without touching code.
+</Note>
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Login flow" icon="right-to-bracket" href="/auth/login">
+    Step-by-step walkthrough of the login and logout process.
+  </Card>
+  <Card title="Roles and permissions" icon="shield-halved" href="/auth/roles-permissions">
+    How roles are defined and how the permission matrix is configured.
+  </Card>
+</CardGroup>

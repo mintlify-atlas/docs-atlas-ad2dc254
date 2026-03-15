@@ -1,0 +1,52 @@
+---
+title: "Introduction"
+description: "Vitacore is a web-based electronic health record (EHR) system for managing patients, clinical evolutions, vital signs, and healthcare configuration."
+---
+
+## What is Vitacore?
+
+Vitacore is a clinical management platform built for healthcare providers. It centralizes patient records, clinical documentation, and administrative configuration in a single web application — enabling medical teams to focus on patient care rather than paperwork.
+
+Built with **Flask** and **Supabase**, Vitacore provides a secure, role-controlled environment where every user action is governed by a configurable permission matrix.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Patient management" icon="user-injured">
+    Register, search, and manage patients with full demographic records including insurance information and contact details.
+  </Card>
+  <Card title="Clinical evolutions" icon="notes-medical">
+    Document clinical consultations including chief complaint, physical exam findings, diagnostic impressions, and treatment plans.
+  </Card>
+  <Card title="Vital signs" icon="heart-pulse">
+    Record and track vital signs per patient — weight, height, BMI (auto-calculated), blood pressure, heart rate, respiratory rate, and temperature.
+  </Card>
+  <Card title="Role-based access control" icon="shield-halved">
+    Define roles with granular view, create, edit, and delete permissions per module using a dynamic permission matrix.
+  </Card>
+  <Card title="Multi-site support" icon="building">
+    Manage multiple headquarters (sedes), offices (consultorios), and assign professionals to specific locations.
+  </Card>
+  <Card title="Healthcare configuration" icon="gear">
+    Manage document types, specialties, medical services, professionals, and country catalogs in one place.
+  </Card>
+</CardGroup>
+
+## How it works
+
+Vitacore is organized around a central patient chart. From the patient detail view, clinical staff can access all clinical history, record new evolution notes, and log vital signs. Administrative users can configure the organizational structure — headquarters, offices, specialties, and services — while system administrators manage user accounts and access permissions.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get Vitacore running in minutes
+  </Card>
+  <Card title="Deployment" icon="server" href="/deployment">
+    Deploy to production
+  </Card>
+  <Card title="Authentication" icon="lock" href="/auth/overview">
+    Understand login and access control
+  </Card>
+  <Card title="Clinical records" icon="file-medical" href="/clinical/patients">
+    Start managing patients
+  </Card>
+</CardGroup>

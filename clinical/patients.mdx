@@ -1,0 +1,90 @@
+---
+title: "Patient management"
+description: "Register, search, and manage patient records in Vitacore, including demographic information, insurance, and status."
+---
+
+## Overview
+
+The patient module is the central hub of Vitacore. Each patient record holds demographic information and links to their full clinical history — evolutions and vital signs. All clinical documentation is accessed through the patient detail view.
+
+The patient list is available at `/hc/pacientes/`.
+
+## Patient fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `tipo_documento_id` | Yes | Document type (linked to configured document types) |
+| `numero_documento` | Yes | Document number — must be unique across all patients |
+| `nombres` | Yes | Patient's given names |
+| `apellidos` | Yes | Patient's family names |
+| `fecha_nacimiento` | No | Date of birth |
+| `sexo` | No | Biological sex |
+| `telefono` | No | Home phone number |
+| `celular` | No | Mobile phone number |
+| `email` | No | Email address |
+| `direccion` | No | Home address |
+| `aseguradora` | No | Health insurance provider |
+| `estado` | — | Patient status: `ACTIVO` or `INACTIVO` (managed via toggle) |
+
+## Routes
+
+| Method | URL | Description |
+|--------|-----|-------------|
+| `GET` | `/hc/pacientes/` | Patient list |
+| `GET` | `/hc/pacientes/nuevo` | New patient form |
+| `POST` | `/hc/pacientes/crear` | Create patient |
+| `GET` | `/hc/pacientes/editar/{id}` | Edit patient form |
+| `POST` | `/hc/pacientes/actualizar/{id}` | Update patient |
+| `POST` | `/hc/pacientes/toggle/{id}` | Toggle ACTIVO/INACTIVO |
+| `GET` | `/hc/pacientes/ver/{id}` | Patient detail view |
+
+## Creating a patient
+
+<Steps>
+  <Step title="Open the new patient form">
+    Navigate to `/hc/pacientes/nuevo`. The form loads available document types from the configuration catalog.
+  </Step>
+  <Step title="Fill in required fields">
+    Enter the document type, document number, given names, and family names. All other fields are optional.
+  </Step>
+  <Step title="Submit the form">
+    Submit to `POST /hc/pacientes/crear`. Vitacore checks whether a patient with the same `numero_documento` already exists. If a duplicate is found, the creation is rejected with an error message.
+  </Step>
+  <Step title="Confirm registration">
+    On success, you are redirected to the patient list with a confirmation message. The new patient has `estado = ACTIVO` by default.
+  </Step>
+</Steps>
+
+<Note>
+Document numbers must be unique. If you attempt to register a patient with an existing document number, Vitacore will display: *"Ya existe un paciente con ese documento."*
+</Note>
+
+## Editing a patient
+
+Navigate to `/hc/pacientes/editar/{id}` to load the edit form pre-populated with the patient's current data. Submit to `/hc/pacientes/actualizar/{id}`. All fields (including document number) can be changed.
+
+## Toggling patient status
+
+Patients can be deactivated without deleting their records. Send a `POST` request to `/hc/pacientes/toggle/{id}`.
+
+- If the patient is `ACTIVO`, the status changes to `INACTIVO`.
+- If the patient is `INACTIVO`, the status changes back to `ACTIVO`.
+
+<Tip>
+Deactivating a patient preserves their full clinical history. This is the recommended approach when a patient is no longer active at your institution.
+</Tip>
+
+## Patient detail view
+
+The detail view at `GET /hc/pacientes/ver/{id}` displays the full patient profile and provides navigation links to the patient's clinical history.
+
+From the detail view you can access:
+
+<CardGroup cols={2}>
+  <Card title="Clinical evolutions" icon="notes-medical" href="/clinical/evolutions">
+    View and add consultation notes, diagnoses, and treatment plans
+  </Card>
+  <Card title="Vital signs" icon="heart-pulse" href="/clinical/vital-signs">
+    View and record vital signs with automatic BMI calculation
+  </Card>
+</CardGroup>

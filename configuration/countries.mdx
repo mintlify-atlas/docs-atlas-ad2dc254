@@ -1,0 +1,90 @@
+---
+title: "Countries"
+description: "Manage the country catalog used across patient and professional records. Country codes follow the ISO 3166-1 standard."
+---
+
+The country catalog provides a standardized list of countries for use in patient demographics and other records that require nationality or country of origin. Codes follow the [ISO 3166-1](https://www.iso.org/iso-3166-country-codes.html) standard.
+
+## Field reference
+
+| Field | Required | Description |
+|---|---|---|
+| `codigo_iso2` | Yes | Two-letter ISO 3166-1 alpha-2 country code (e.g., `CO`, `US`, `MX`). Must be unique. |
+| `codigo_iso3` | No | Three-letter ISO 3166-1 alpha-3 country code (e.g., `COL`, `USA`, `MEX`). |
+| `nombre` | Yes | Full country name (e.g., "Colombia", "Estados Unidos"). |
+| `estado` | — | Status: `ACTIVO` or `INACTIVO`. Defaults to `ACTIVO` on creation. |
+
+<Note>
+The `codigo_iso2` field is validated for uniqueness. Attempting to save a two-letter code that already exists in the catalog will fail with a validation error. Use the official ISO 3166-1 alpha-2 codes to avoid conflicts.
+</Note>
+
+## Routes
+
+| Action | Method | URL |
+|---|---|---|
+| List all countries | `GET` | `/hc/configuracion/paises` |
+| New country form | `GET` | `/hc/configuracion/paises/nuevo` |
+| Create country | `POST` | `/hc/configuracion/paises/nuevo` |
+| Edit country form | `GET` | `/hc/configuracion/paises/editar/<item_id>` |
+| Update country | `POST` | `/hc/configuracion/paises/editar/<item_id>` |
+| Toggle status | `POST` | `/hc/configuracion/paises/toggle/<item_id>` |
+
+## Managing countries
+
+### Adding a country
+
+<Steps>
+  <Step title="Open the new country form">
+    Navigate to **Configuration → Countries** and click **Nuevo país**, or go directly to `/hc/configuracion/paises/nuevo`.
+  </Step>
+  <Step title="Enter the ISO codes and name">
+    Enter the two-letter `codigo_iso2` (required). Optionally add the three-letter `codigo_iso3`. Enter the full country `nombre`.
+  </Step>
+  <Step title="Save">
+    Submit the form. The country is saved with status `ACTIVO`.
+  </Step>
+</Steps>
+
+### Editing a country
+
+Click **Editar** in the country list or go to `/hc/configuracion/paises/editar/<item_id>`. All fields are editable. If you change `codigo_iso2`, the new value must be unique and must be a valid ISO 3166-1 alpha-2 code.
+
+### Toggling status
+
+Click the status badge to toggle between `ACTIVO` and `INACTIVO` via a `POST` to `/hc/configuracion/paises/toggle/<item_id>`.
+
+<Note>
+Deactivating a country removes it from the active country selectors in registration forms. It does not modify any existing records that reference that country.
+</Note>
+
+## ISO 3166-1 reference
+
+Common codes for Latin American countries:
+
+| Country | alpha-2 | alpha-3 |
+|---|---|---|
+| Colombia | `CO` | `COL` |
+| México | `MX` | `MEX` |
+| Argentina | `AR` | `ARG` |
+| Chile | `CL` | `CHL` |
+| Perú | `PE` | `PER` |
+| Venezuela | `VE` | `VEN` |
+| Ecuador | `EC` | `ECU` |
+| Bolivia | `BO` | `BOL` |
+| Estados Unidos | `US` | `USA` |
+| España | `ES` | `ESP` |
+
+<Tip>
+The full list of ISO 3166-1 codes is maintained by the ISO and is available at [iso.org](https://www.iso.org/iso-3166-country-codes.html). Use the official codes to ensure compatibility with external systems.
+</Tip>
+
+## Related sections
+
+<CardGroup cols={2}>
+  <Card title="Configuration overview" icon="gear" href="/configuration/overview">
+    See the full catalog setup order.
+  </Card>
+  <Card title="Document types" icon="id-card" href="/configuration/document-types">
+    Another foundational catalog used across patient records.
+  </Card>
+</CardGroup>
