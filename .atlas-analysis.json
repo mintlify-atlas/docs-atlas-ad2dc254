@@ -1,0 +1,98 @@
+{
+  "projectType": "saas",
+  "projectName": "Vitacore",
+  "projectDescription": "A web-based electronic health record (EHR) system for managing patients, clinical evolutions, vital signs, and healthcare configuration, built with Flask and Supabase.",
+  "theme": "almond",
+  "primaryColor": "#2E7D9B",
+  "lightColor": "#E8F4F8",
+  "darkColor": "#1A4F65",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "deployment"]
+          },
+          {
+            "group": "Authentication",
+            "pages": ["auth/overview", "auth/login", "auth/roles-permissions"]
+          },
+          {
+            "group": "Clinical Records",
+            "pages": ["clinical/patients", "clinical/evolutions", "clinical/vital-signs"]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/headquarters",
+              "configuration/specialties",
+              "configuration/services",
+              "configuration/offices",
+              "configuration/professionals",
+              "configuration/document-types",
+              "configuration/countries"
+            ]
+          },
+          {
+            "group": "Administration",
+            "pages": ["admin/users", "admin/roles", "admin/route-sync"]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Architecture",
+            "pages": ["reference/architecture", "reference/database", "reference/blueprints"]
+          },
+          {
+            "group": "Configuration",
+            "pages": ["reference/environment-variables"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Patient management with full CRUD and status toggle",
+    "Clinical evolution notes with diagnosis and treatment plans",
+    "Vital signs tracking with automatic BMI calculation",
+    "Role-based access control with dynamic permission matrix",
+    "Multi-site (sedes) and multi-office (consultorios) support",
+    "Healthcare professionals directory with specialties",
+    "Supabase-backed authentication and data storage",
+    "Admin tool for automatic route-to-permission synchronization"
+  ],
+  "publicApiSurface": [
+    "GET/POST /auth/login",
+    "GET /auth/logout",
+    "GET /hc/ — Dashboard",
+    "GET /hc/pacientes/ — Patient list",
+    "GET /hc/pacientes/nuevo — New patient form",
+    "POST /hc/pacientes/crear — Create patient",
+    "GET /hc/pacientes/editar/<id> — Edit patient",
+    "POST /hc/pacientes/actualizar/<id> — Update patient",
+    "POST /hc/pacientes/toggle/<id> — Toggle patient status",
+    "GET /hc/pacientes/ver/<id> — Patient detail",
+    "GET /hc/evoluciones/paciente/<id> — List evolutions",
+    "GET /hc/evoluciones/nuevo/<paciente_id> — New evolution form",
+    "POST /hc/evoluciones/crear/<paciente_id> — Create evolution",
+    "GET /hc/signos/paciente/<id> — List vital signs",
+    "GET /hc/signos/nuevo/<paciente_id> — New vital signs form",
+    "POST /hc/signos/crear/<paciente_id> — Record vital signs",
+    "GET/POST /hc/configuracion/roles-permisos/ — Roles and permissions",
+    "GET/POST /hc/configuracion/usuarios/ — User management",
+    "GET /hc/configuracion/sedes — Headquarters management",
+    "GET /hc/configuracion/especialidades — Specialties management",
+    "GET /hc/configuracion/servicios — Services management",
+    "GET /hc/configuracion/consultorios — Offices management",
+    "GET /hc/configuracion/profesionales — Professionals management",
+    "GET /hc/configuracion/tipos-documento — Document types",
+    "GET /hc/configuracion/paises — Countries",
+    "GET /admin/sync_rutas — Sync routes to permission database"
+  ]
+}
